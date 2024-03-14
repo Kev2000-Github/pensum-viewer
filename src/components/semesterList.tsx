@@ -1,62 +1,80 @@
-import { useStore } from "@nanostores/preact";
-import {
-  pensumMeta,
-  addSemester,
-  removeSemester,
-  isCartOpen,
-} from "../stores/pensum";
+import { useStore } from "@nanostores/react";
+import { pensumMeta, addSemester, removeSemester } from "../stores/pensum";
+import { useState } from "react";
+import { ScrollArea } from "./ui/scroll-area";
+import { Card } from "./ui/card";
 
 function SemesterList() {
   const pensum = useStore(pensumMeta);
-  const cart = useStore(isCartOpen);
+  const [semesterNumber, setSemesterNumber] = useState<number>();
+
+  const onChangeNumber = (val: string) => {
+    const number = +val;
+    setSemesterNumber(number);
+  };
 
   const onAddSemester = () => {
-    const semesters = [...pensum];
-    semesters.push({ semester: semesters.length + 1, courses: [] });
-    pensumMeta.set(semesters);
+    if (!semesterNumber || isNaN(semesterNumber))
+      return alert("Invalid semester number");
+    try {
+      addSemester(semesterNumber);
+    } catch (error) {
+      if (error instanceof Error) alert(error.message);
+    } finally {
+      setSemesterNumber(undefined);
+    }
   };
 
   const onRemoveSemester = (semester: number) => {
-    const semesters = [...pensum];
-    const semesterIndex = semesters.findIndex(
-      (obj) => obj.semester === semester
-    );
-    semesters.splice(semesterIndex, 1);
-    pensumMeta.set(semesters);
+    removeSemester(semester);
   };
 
   return (
-    <div class="p-4">
-      <header class="flex flex-row gap-4 items-center">
-        <h1>Semesters</h1>
+    <div className="p-2">
+      <header className="flex flex-row gap-4 items-center">
+        <label
+          htmlFor="large-input"
+          className="block mb-2 text-lg font-semibold text-white"
+        >
+          Semester #
+        </label>
+        <input
+          value={semesterNumber || ""}
+          onInput={(e) => onChangeNumber(e.currentTarget.value)}
+          onKeyPress={(e) => {
+            if (e.key === "Enter") onAddSemester();
+          }}
+          type="text"
+          maxLength={2}
+          className="block w-9 h-9 py-3 text-sm font-semibold text-center rounded-lg focus:ring-primary-500 focus:border-primary-500 bg-gray-700 border-gray-600 placeholder-gray-400 text-white focus:ring-primary-500 focus:border-primary-500"
+          required
+        />
         <button
           onClick={onAddSemester}
-          class="px-4 py-2 rounded-sm bg-purple-600 hover:bg-purple-400 transition duration-200"
+          className="px-4 py-2 rounded-md bg-purple-600 hover:bg-purple-400 transition duration-200"
         >
-          Add +
+          Add
         </button>
       </header>
-      <ul>
-        {pensum.map((semester) => (
-          <li class="flex flex-row gap-4 py-4">
-            <h2>Semester {semester.semester}</h2>
-            <button
-              onClick={() => onRemoveSemester(semester.semester)}
-              class="px-4 py-2 rounded-sm bg-purple-600 hover:bg-purple-400 transition duration-200"
+      <hr className="my-4" />
+      <Card className="w-fit">
+        <ScrollArea className="w-96 h-72 pt-6">
+          {pensum.map((semester) => (
+            <a
+              href={`/config/${semester.semester}`}
+              className="flex flex-row gap-4 py-4 hover:bg-cyan-600 items-center justify-between px-2"
             >
-              Remove -
-            </button>
-          </li>
-        ))}
-      </ul>
-      <h1>Testing...</h1>
-      <button
-        onClick={() => isCartOpen.set(!cart)}
-        class="px-4 py-2 rounded-sm bg-purple-600 hover:bg-purple-400 transition duration-200"
-      >
-        Cart Toggle
-      </button>
-      <div>isCartOpen: {cart ? "true" : "false"}</div>
+              <h2>Semester {semester.semester}</h2>
+              <button
+                onClick={() => onRemoveSemester(semester.semester)}
+                className="px-4 py-2 rounded-md bg-purple-600 hover:bg-purple-400 transition duration-200"
+              >
+                Remove
+              </button>
+            </a>
+          ))}
+        </ScrollArea>
+      </Card>
     </div>
   );
 }

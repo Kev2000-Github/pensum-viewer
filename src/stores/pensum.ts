@@ -1,7 +1,4 @@
 import { persistentAtom } from "@nanostores/persistent";
-import { atom } from "nanostores";
-
-export const isCartOpen = atom(false);
 
 export const pensumMeta = persistentAtom<PensumMeta>("pensumMeta", [], {
   encode(value) {
@@ -45,16 +42,20 @@ export function removeCourse(course: CourseMeta, semester: number) {
   return true;
 }
 
-export function addSemester() {
+export function addSemester(semesterNumber: number) {
   const pensum = pensumMeta.get();
-  pensum.push({ semester: pensum.length + 1, courses: [] });
-  pensumMeta.set(pensum);
+  const semesterIndex = pensum.findIndex(
+    (obj) => obj.semester === semesterNumber
+  );
+  if (semesterIndex !== -1) throw new Error("Semester already exists");
+  pensumMeta.set([...pensum, { semester: semesterNumber, courses: [] }]);
 }
 
 export function removeSemester(semester: number) {
   const pensum = pensumMeta.get();
-  pensum.splice(semester - 1, 1);
-  pensumMeta.set(pensum);
+  const semesterIndex = pensum.findIndex((obj) => obj.semester === semester);
+  pensum.splice(semesterIndex, 1);
+  pensumMeta.set([...pensum]);
 }
 
 export function clearPensum() {
